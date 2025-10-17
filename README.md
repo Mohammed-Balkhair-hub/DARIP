@@ -1,4 +1,4 @@
-# DARIP - Daily AI Research Intelligence Podcast
+# DARIP - Daily AI-Generated Recaps in Podcast
 
 An automated podcast generation system that creates daily tech news episodes with AI-powered hosts.
 
