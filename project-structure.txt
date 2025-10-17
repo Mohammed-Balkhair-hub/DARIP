@@ -1,0 +1,63 @@
+darip/
+├─ README.md                         # How to run locally & deploy (Cloud Run notes)
+├─ .env.example                      # Environment variables template
+├─ .gitignore
+├─ data/                             # Inputs/outputs the pipeline produces (ignored in git)
+│  ├─ feeds/
+│  │  └─ sources.yaml                # RSS/source list (topics, weights, language)
+│  ├─ cache/                         # Temp fetch/dedup artifacts
+│  └─ outputs/
+│     └─ 2025-10-17/                 # One folder per run/day
+│        ├─ darip_episode.mp3        # Final mixed audio (duo)
+│        ├─ darip_captions.vtt       # WebVTT captions
+│        ├─ darip_script.json        # Final scripted dialogue
+│        └─ darip_items.json         # Chosen items & metadata
+│
+├─ scripts/                          # Helper scripts for dev/CI/CD
+│  ├─ dev_run_local.sh               # Run orchestrator in Docker locally
+│  ├─ build_and_push.sh              # Build & push image to Artifact Registry
+│  └─ healthcheck.sh                 # Simple /healthz for container
+│
+├─ orchestrator/                     # Core pipeline (Python)
+│  ├─ __init__.py
+│  ├─ run_daily.py                   # Entry point: runs the whole pipeline end-to-end
+│  ├─ requirements.txt               # Python deps for orchestrator
+│  ├─ Dockerfile                     # Container for the pipeline job/Cloud Run job
+│  ├─ config/
+│  │  ├─ settings.py                 # Reads env vars (paths, API keys, toggles)
+│  │  └─ logging.yaml                # Structured logging config
+│  ├─ rag/
+│  │  ├─ __init__.py
+│  │  ├─ embeddings.py               # Build/use text embeddings
+│  │  └─ faiss_utils.py              # FAISS index build/query helpers
+│  └─ agents/                        # Pipeline stages (numbered in run order)
+│     ├─ 00_collector.py             # Fetch items via RSS/API; normalize fields
+│     ├─ 01_dedup_cluster.py         # Near-dup & cluster by similarity
+│     ├─ 02_bulletizer.py            # Turn articles → crisp bullet points
+│     ├─ 03_segment_composer.py      # Group bullets into segments (story arcs)
+│     ├─ 04_scriptwriter.py          # Convert segments → two-speaker script
+│     ├─ 05_polisher_verifier.py     # Style, facts sanity-check, timing marks
+│     ├─ 06_tts_renderer.py          # Generate two voices, per-line audio
+│     ├─ 07_assembler.py             # Stitch WAVs/MP3, mix intro/outro, music ducking
+│     ├─ 08_captions.py              # Align text → VTT/SRT captions
+│     └─ 09_publisher.py             # Write outputs, update site JSON/today payload
+│
+└─ site/                             # Static website
+   ├─ Dockerfile                     # (Optional) Nginx to serve /public
+   ├─ public/
+   │  ├─ index.html                  # Landing page for DARIP
+   │  ├─ today.html                  # Today’s episode page (reads JSON from /assets/json)
+   │  ├─ archive.html                # Past episodes list
+   │  └─ assets/
+   │     ├─ css/
+   │     │  └─ main.css
+   │     ├─ js/
+   │     │  └─ app.js
+   │     ├─ audio/                   # Published mp3 files (copied from data/outputs/*)
+   │     ├─ images/
+   │     └─ json/
+   │        ├─ today.json            # Today’s metadata (title, duration, tracks)
+   │        └─ archive.json          # List of previous episodes
+   └─ tools/
+      ├─ build_rss.py                # Generate podcast RSS feed (from /public/assets/audio + json)
+      └─ generate_sitemap.py         # Optional: sitemap.xml for SEO

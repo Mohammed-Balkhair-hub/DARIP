@@ -1,0 +1,6 @@
+def main():
+    # your pipeline: collect -> dedup -> bulletize -> ...
+    ...
+
+if __name__ == "__main__":
+    main()

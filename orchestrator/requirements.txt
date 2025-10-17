@@ -1,0 +1,14 @@
+feedparser
+requests
+beautifulsoup4
+sentence-transformers
+faiss-cpu
+langgraph
+pydub
+python-dateutil
+tqdm
+fastapi
+uvicorn[standard]
+google-cloud-texttospeech
+google-cloud-storage
+google-cloud-secret-manager

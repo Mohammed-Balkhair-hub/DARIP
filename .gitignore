@@ -1,0 +1,128 @@
+# Environment variables and secrets
+.env
+.env.local
+.env.production
+.env.staging
+*.env
+secrets/
+credentials/
+
+# Data directory - pipeline inputs/outputs (as noted in project structure)
+data/
+# Keep data structure but ignore contents
+!data/feeds/sources.yaml
+!data/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Audio files (generated content)
+*.mp3
+*.wav
+*.m4a
+*.aac
+
+# Video files
+*.mp4
+*.avi
+*.mov
+
+# Caption files (generated content)
+*.vtt
+*.srt
+
+# FAISS indices and embeddings
+*.index
+*.faiss
+embeddings/
+
+# Cache directories
+.cache/
+cache/
+
+# Docker
+.dockerignore
+
+# Node.js (if any frontend build tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+build/
+dist/
+out/
+
+# RSS and sitemap (generated)
+*.xml
+sitemap.xml
+feed.xml
+
+# JSON outputs (generated content)
+data/outputs/**/*.json
+site/public/assets/json/today.json
+site/public/assets/json/archive.json
+
+# Keep example files
+!*.example
+!.env.example

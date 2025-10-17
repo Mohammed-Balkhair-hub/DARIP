@@ -1,0 +1,35 @@
+services:
+  orchestrator:
+    build:
+      context: ./orchestrator
+      dockerfile: Dockerfile
+
+    # If you're on Apple Silicon (M1/M2/M3), uncomment to match Cloud Run:
+    platform: linux/amd64
+
+    image: darip:local
+    container_name: darip
+
+    env_file:
+      - .env
+
+    volumes:
+      - ./orchestrator:/app
+      - ./data:/data
+      - ./outputs:/outputs
+      # When you enable real TTS, also mount your SA key:
+      # - ${GOOGLE_APPLICATION_CREDENTIALS}:${GOOGLE_APPLICATION_CREDENTIALS}:ro
+
+    working_dir: /app
+
+    # ======= MODE SWITCH =======
+    # 1) RUN-ONCE MODE (commented OUT)
+    # command: ["bash", "entrypoint.sh"]
+
+    # 2) DEV-SERVER MODE (ACTIVE)
+    command: ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    # ===========================
+
+    restart: "no"
