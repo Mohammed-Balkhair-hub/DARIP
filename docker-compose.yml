@@ -16,7 +16,6 @@ services:
     volumes:
       - ./orchestrator:/app
       - ./data:/data
-      - ./outputs:/outputs
       # When you enable real TTS, also mount your SA key:
       # - ${GOOGLE_APPLICATION_CREDENTIALS}:${GOOGLE_APPLICATION_CREDENTIALS}:ro
 

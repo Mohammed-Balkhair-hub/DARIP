@@ -126,3 +126,6 @@ site/public/assets/json/archive.json
 # Keep example files
 !*.example
 !.env.example
+
+# Project documentation
+summary.txt

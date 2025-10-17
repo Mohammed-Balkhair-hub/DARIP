@@ -40,15 +40,27 @@ The system operates as a **multi-agent pipeline** where each agent specializes i
 
 ## 🚀 Development Status
 
-**Current Phase**: Early development - infrastructure setup complete
+**Current Phase**: Step 3 - Deduplication & Clustering
 
-**Environment Modes**:
-- **Dev Server**: `docker compose up --build` → `curl -X POST localhost:8000/run`
-- **Production Parity**: Switch to `entrypoint.sh` mode for Cloud Run testing
+### ✅ Completed Phases:
 
-**Key Configuration**:
-- `USE_FAKE_TTS=1` for development (silent audio generation)
-- Toggle to real Google Cloud TTS when ready for voice testing
+**1) Environment & Modes (DONE)**
+- Dev-server mode: `docker compose up --build` → `curl -X POST localhost:8000/run`
+- Run-once mode: Switch to `entrypoint.sh` for Cloud Run parity
+- Environment toggles: `USE_FAKE_TTS=1`, voice settings, file paths
+
+**2) Ingestion & Normalization (DONE)**
+- Collector Agent implemented and tested
+- Fetches recent articles from 15+ RSS feeds
+- Outputs: `data/outputs/YYYY-MM-DD/raw_items.json` with count metadata
+- Caches: `data/cache/YYYY-MM-DD/*.json` for article bodies
+
+### 🔄 Current Phase:
+
+**3) Deduplication & Clustering**
+- Remove duplicate articles
+- Group similar articles into clusters
+- Prepare for RAG bulletizer stage
 
 ## 📁 Project Structure
 
