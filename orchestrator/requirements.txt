@@ -12,3 +12,9 @@ uvicorn[standard]
 google-cloud-texttospeech
 google-cloud-storage
 google-cloud-secret-manager
+numpy
+scikit-learn
+tldextract
+ujson
+openai
+tenacity

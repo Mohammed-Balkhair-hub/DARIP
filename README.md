@@ -40,27 +40,40 @@ The system operates as a **multi-agent pipeline** where each agent specializes i
 
 ## 🚀 Development Status
 
-**Current Phase**: Step 3 - Deduplication & Clustering
+**Current Phase**: Step 4 - Summarization & Bulletization
 
 ### ✅ Completed Phases:
 
-**1) Environment & Modes (DONE)**
+**Step 1: Environment & Modes (DONE)**
 - Dev-server mode: `docker compose up --build` → `curl -X POST localhost:8000/run`
 - Run-once mode: Switch to `entrypoint.sh` for Cloud Run parity
 - Environment toggles: `USE_FAKE_TTS=1`, voice settings, file paths
 
-**2) Ingestion & Normalization (DONE)**
+**Step 2: Collection & Normalization (DONE)**
 - Collector Agent implemented and tested
-- Fetches recent articles from 15+ RSS feeds
+- Fetches recent articles from 20+ RSS feeds
 - Outputs: `data/outputs/YYYY-MM-DD/raw_items.json` with count metadata
 - Caches: `data/cache/YYYY-MM-DD/*.json` for article bodies
 
+**Step 3: Deduplication & Clustering (DONE)** ✨
+- **Exact dedup**: Removes identical articles by title + URL
+- **Near-dedup**: Semantic similarity filtering (75% threshold)
+- **Dynamic clustering**: Auto-discovers 3-5 coherent topic clusters
+- **LLM refinement** (LangGraph workflow):
+  - **Call 1**: Filters to top 20 most important tech innovation articles
+  - **Call 2**: Optimizes clusters and generates engaging labels
+- **Outputs**: 
+  - `clusters.json` - 20 curated articles in 3-5 labeled clusters
+  - `step3_metrics.json` - Performance and quality metrics
+- **Technology**: Agglomerative clustering + GPT-4o-mini refinement
+
 ### 🔄 Current Phase:
 
-**3) Deduplication & Clustering**
-- Remove duplicate articles
-- Group similar articles into clusters
-- Prepare for RAG bulletizer stage
+**Step 4: Summarization & Bulletization**
+- Convert article clusters into structured bullet points
+- Use RAG (Retrieval-Augmented Generation) for accuracy
+- Generate concise summaries per cluster
+- Prepare content for dialogue scriptwriting
 
 ## 📁 Project Structure
 
