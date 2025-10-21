@@ -1,0 +1,80 @@
+{
+  "queries": [
+    {
+      "query": "AI foundation models and LLMs",
+      "expansions": ["GPT", "Llama", "Qwen", "DeepSeek", "Mistral", "Claude", "Gemini", "Mixtral", "MoE", "SSM", "Mamba", "transformer", "multimodal", "VLM", "reasoning", "tool use", "RAG"]
+    },
+    {
+      "query": "AI research papers daily",
+      "expansions": ["arXiv", "cs.LG", "cs.CL", "cs.CV", "ICLR", "NeurIPS", "ICML", "CVPR", "EMNLP", "ACL", "SFT", "RLHF", "RLAIF", "DPO", "PPO", "distillation", "alignment", "safety"]
+    },
+    {
+      "query": "AI benchmarks and evals",
+      "expansions": ["MMLU", "GSM8K", "HumanEval", "BBH", "HELM", "Arena", "MT-Bench", "hallucination rate", "eval harness", "leaderboard"]
+    },
+    {
+      "query": "AI agents and robotics",
+      "expansions": ["agentic AI", "embodied AI", "manipulation", "warehouse automation", "humanoid", "Figure AI", "1X", "Tesla Bot", "AutoGPT", "tools", "memory", "planner"]
+    },
+    {
+      "query": "autonomous driving",
+      "expansions": ["Level 4", "L4", "SAE", "robotaxi", "perception planning control", "Waymo", "Cruise", "Tesla FSD", "LiDAR", "sensor fusion", "HD maps", "safety case"]
+    },
+    {
+      "query": "GPU accelerators and AI hardware",
+      "expansions": ["NVIDIA", "Blackwell", "B200", "GB200", "H100", "RTX Pro 6000", "CUDA", "DGX", "Grace Hopper", "AMD MI300", "Intel Gaudi", "TPU", "NPU", "ASIC", "inference", "edge AI"]
+    },
+    {
+      "query": "semiconductor manufacturing and supply chain",
+      "expansions": ["TSMC", "Samsung Foundry", "Intel Foundry", "CoWoS", "HBM", "advanced packaging", "capacity expansion", "export controls", "licensing", "Commerce Department"]
+    },
+    {
+      "query": "cloud AI platforms and outages",
+      "expansions": ["AWS", "Azure", "Google Cloud", "Vertex AI", "Bedrock", "OpenAI API", "Anthropic API", "Hugging Face", "Databricks", "outage", "incident", "status page", "SLA"]
+    },
+    {
+      "query": "open source AI releases",
+      "expansions": ["GitHub release", "model card", "weights", "Apache 2.0", "MIT license", "Hugging Face", "nvcr", "pip", "conda", "OpenELM", "Phi", "Llama Guard", "Guardrails"]
+    },
+    {
+      "query": "computer vision and generative media",
+      "expansions": ["object detection", "segmentation", "tracking", "YOLO", "SAM", "NeRF", "diffusion models", "image-to-video", "text-to-video", "DALL-E", "Stable Diffusion", "Sora"]
+    },
+    {
+      "query": "AI regulation and policy",
+      "expansions": ["EU AI Act", "UK safety institute", "NIST AI RMF", "executive order", "copyright", "training data", "liability", "transparency", "watermarking", "guardrails"]
+    },
+    {
+      "query": "big tech AI business moves",
+      "expansions": ["OpenAI", "Microsoft", "Google", "Alphabet", "Anthropic", "Meta", "Amazon", "NVIDIA", "Apple", "partnership", "licensing", "M&A", "earnings", "guidance", "pricing"]
+    },
+    {
+      "query": "social platforms and content moderation",
+      "expansions": ["Meta", "Facebook", "Instagram", "Threads", "TikTok", "YouTube", "X", "Snap", "Reddit", "age verification", "platform liability", "Section 230", "teen safety", "algorithmic feeds"]
+    },
+    {
+      "query": "privacy antitrust and safety",
+      "expansions": ["DoJ", "FTC", "CMA", "DG COMP", "antitrust", "consent decree", "data protection", "GDPR", "DMA", "DSA", "dark patterns", "safety policy"]
+    },
+    {
+      "query": "security for AI systems",
+      "expansions": ["prompt injection", "model theft", "dataset poisoning", "supply chain", "SBOM", "secrets", "Responsible AI", "red teaming", "evals", "jailbreak"]
+    },
+    {
+      "query": "AI labs and research organizations",
+      "expansions": ["Google DeepMind", "FAIR", "Meta AI", "Microsoft Research", "NVIDIA Research", "Apple ML Research", "Anthropic Research", "OpenAI Research", "Berkeley BAIR", "Stanford HAI", "MIT CSAIL", "CMU ML", "Tsinghua KEG", "Oxford AI"]
+    },
+    {
+      "query": "AI developer tooling and inference serving",
+      "expansions": ["vLLM", "TGI", "Text Generation Inference", "Triton kernel", "TensorRT-LLM", "ONNX Runtime", "Ollama", "llama.cpp", "FlashAttention", "quantization", "LoRA", "speculative decoding"]
+    },
+    {
+      "query": "vector search and RAG infrastructure",
+      "expansions": ["Milvus", "FAISS", "Qdrant", "pgvector", "Weaviate", "Pinecone", "Elasticsearch vector", "Embeddings", "chunking", "hybrid search", "reranking", "LangChain", "LlamaIndex"]
+    },
+    {
+      "query": "speech audio and TTS ASR",
+      "expansions": ["text to speech", "speech to text", "ASR", "TTS", "Whisper", "SeamlessM4T", "Voice Engine", "audio LM", "music generation", "diarization"]
+    }
+  ]
+}

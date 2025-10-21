@@ -18,3 +18,11 @@ tldextract
 ujson
 openai
 tenacity
+trafilatura
+readability-lxml
+newspaper3k
+goose3
+aiohttp
+langdetect
+pyrate-limiter
+rank-bm25

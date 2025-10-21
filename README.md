@@ -23,15 +23,16 @@ Tech News Sources → AI Processing Pipeline → Daily Podcast Episode
 The system operates as a **multi-agent pipeline** where each agent specializes in a specific task:
 
 1. **Collector** - Fetches and normalizes news from RSS feeds
-2. **Dedup & Cluster** - Removes duplicates and groups related stories
-3. **Bulletizer** - Converts articles into structured bullet points using RAG
-4. **Segment Composer** - Merges bullets into cohesive story segments
-5. **Scriptwriter** - Creates natural dialogue between two hosts
-6. **Polisher** - Fact-checks and refines the script
-7. **TTS Renderer** - Generates voice audio for both hosts
-8. **Assembler** - Mixes audio with proper timing and loudness
-9. **Captions** - Creates WebVTT captions synchronized with audio
-10. **Publisher** - Packages everything into final episode format
+2. **Full-Text Enricher** - Fetches complete article text for all collected items
+3. **RAG Retriever** - Semantic search with fixed queries to find most relevant articles
+4. **Bulletizer** - Converts articles into structured bullet points using RAG
+5. **Segment Composer** - Merges bullets into cohesive story segments
+6. **Scriptwriter** - Creates natural dialogue between two hosts
+7. **Polisher** - Fact-checks and refines the script
+8. **TTS Renderer** - Generates voice audio for both hosts
+9. **Assembler** - Mixes audio with proper timing and loudness
+10. **Captions** - Creates WebVTT captions synchronized with audio
+11. **Publisher** - Packages everything into final episode format
 
 ## 🎭 Host Personalities
 
@@ -52,20 +53,38 @@ The system operates as a **multi-agent pipeline** where each agent specializes i
 **Step 2: Collection & Normalization (DONE)**
 - Collector Agent implemented and tested
 - Fetches recent articles from 20+ RSS feeds
-- Outputs: `data/outputs/YYYY-MM-DD/raw_items.json` with count metadata
+- Outputs: `data/outputs/YYYY-MM-DD/raw_items.json` with count metadata (~400-500 items)
 - Caches: `data/cache/YYYY-MM-DD/*.json` for article bodies
 
-**Step 3: Deduplication & Clustering (DONE)** ✨
-- **Exact dedup**: Removes identical articles by title + URL
-- **Near-dedup**: Semantic similarity filtering (75% threshold)
-- **Dynamic clustering**: Auto-discovers 3-5 coherent topic clusters
-- **LLM refinement** (LangGraph workflow):
-  - **Call 1**: Filters to top 20 most important tech innovation articles
-  - **Call 2**: Optimizes clusters and generates engaging labels
+**Step 2.5: Full-Text Enrichment (DONE)** 🚀
+- **LangGraph workflow**: Fetches and extracts full article text for ALL raw items
+- **Multi-library extraction**: trafilatura → readability → newspaper3k → goose3
+- **Politeness controls**:
+  - Robots.txt compliance
+  - Per-domain rate limiting (0.5 QPS)
+  - Per-domain concurrency (max 1 simultaneous)
+  - Paywall detection and respect
+- **Quality validation**: Language filtering, minimum word count (200)
+- **Outputs**: Updates `raw_items.json` in-place with:
+  - `has_fulltext` and `full_text` per item
+  - `enrichment_stats` top-level block
+- **Success rate**: 40-65% (paywalls, timeouts, etc. cause failures)
+- **Technology**: Async fetching + 4-way extraction fallback
+- **Performance**: ~15-20 minutes for 400-500 items
+
+**Step 3: RAG Query Retrieval (DONE)** 🔍
+- **Replaces clustering** with semantic search using fixed queries
+- **Chunking**: Splits articles into 350-550 token pieces with 15% overlap
+- **Hybrid retrieval**: Combines dense (FAISS) + lexical (BM25) scoring
+- **Fixed queries**: 8 predefined topics (nvidia hardware, autonomous driving, LLMs, regulation, etc.)
+- **Diversity**: MMR algorithm ensures balanced coverage across queries
+- **Per-query cap**: Max 8 articles per query to prevent dominance
 - **Outputs**: 
-  - `clusters.json` - 20 curated articles in 3-5 labeled clusters
-  - `step3_metrics.json` - Performance and quality metrics
-- **Technology**: Agglomerative clustering + GPT-4o-mini refinement
+  - `queried_news.json` - 20 most relevant articles with full_text
+  - Matched queries, hybrid scores, best chunk snippets
+- **Technology**: sentence-transformers + FAISS + BM25
+- **Performance**: ~30 seconds for 468 articles (no API costs!)
+- **Benefits**: Editorial control, faster, free, consistent daily
 
 ### 🔄 Current Phase:
 
@@ -84,9 +103,10 @@ darip/
 │   ├── cache/              # Temporary processing artifacts  
 │   └── outputs/            # Generated episodes by date
 ├── orchestrator/           # Core AI pipeline (Python)
-│   ├── agents/            # Individual processing agents
-│   ├── rag/               # RAG and embeddings utilities
-│   └── config/            # Environment and logging config
+│   ├── agents/            # Pipeline agents (collector, enricher, retriever, etc.)
+│   ├── extractors/        # Text extraction utilities (robots, HTML, text)
+│   ├── rag/               # RAG utilities (chunker, embedder, indexer, scorer, MMR)
+│   └── config/            # Environment settings and query configurations
 ├── site/                   # Static website for episodes
 │   └── public/            # HTML, CSS, JS, and published content
 └── scripts/               # Development and deployment helpers

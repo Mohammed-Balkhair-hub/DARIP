@@ -45,15 +45,23 @@ def _load_and_validate_input(input_path: str) -> List[Dict[str, Any]]:
     else:
         items = []
     
-    # Filter items with missing title or url
+    # Filter items with missing title or url, AND items without full text
     valid_items = []
     for item in items:
         if not item.get("title") or not item.get("url"):
             continue
         
+        # ONLY process items that have full text (enriched)
+        if not item.get("has_fulltext", False):
+            continue
+        
         # Map content → abstract if abstract is missing
         if not item.get("abstract") and item.get("content"):
             item["abstract"] = item["content"]
+        
+        # Use full_text for abstract if available (better for clustering)
+        if item.get("full_text"):
+            item["abstract"] = item["full_text"]
         
         # Extract source_domain if missing
         if not item.get("source_domain"):
@@ -898,7 +906,7 @@ def _assemble_clusters_output(
                 "source_domain": item.get("source_domain", ""),
                 "published_at": item.get("published_at", ""),
                 "summary": item.get("summary", ""),
-                "abstract": item.get("abstract", ""),
+                "full_text": item.get("full_text", ""),
                 "language": item.get("language", "en")
             }
             clean_items.append(clean_item)
