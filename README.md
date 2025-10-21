@@ -57,34 +57,14 @@ The system operates as a **multi-agent pipeline** where each agent specializes i
 - Caches: `data/cache/YYYY-MM-DD/*.json` for article bodies
 
 **Step 2.5: Full-Text Enrichment (DONE)** 🚀
-- **LangGraph workflow**: Fetches and extracts full article text for ALL raw items
-- **Multi-library extraction**: trafilatura → readability → newspaper3k → goose3
-- **Politeness controls**:
-  - Robots.txt compliance
-  - Per-domain rate limiting (0.5 QPS)
-  - Per-domain concurrency (max 1 simultaneous)
-  - Paywall detection and respect
-- **Quality validation**: Language filtering, minimum word count (200)
-- **Outputs**: Updates `raw_items.json` in-place with:
-  - `has_fulltext` and `full_text` per item
-  - `enrichment_stats` top-level block
-- **Success rate**: 40-65% (paywalls, timeouts, etc. cause failures)
-- **Technology**: Async fetching + 4-way extraction fallback
-- **Performance**: ~15-20 minutes for 400-500 items
+- LangGraph workflow that fetches complete article text for all raw items using robots.txt compliance, rate limiting, and 4-library extraction fallback (trafilatura → readability → newspaper3k → goose3)
+- Success rate: ~40-65%, Performance: ~15-20 min for 400-500 items
+- 📖 **[Full documentation →](orchestrator/extractors/README.md)**
 
 **Step 3: RAG Query Retrieval (DONE)** 🔍
-- **Replaces clustering** with semantic search using fixed queries
-- **Chunking**: Splits articles into 350-550 token pieces with 15% overlap
-- **Hybrid retrieval**: Combines dense (FAISS) + lexical (BM25) scoring
-- **Fixed queries**: 8 predefined topics (nvidia hardware, autonomous driving, LLMs, regulation, etc.)
-- **Diversity**: MMR algorithm ensures balanced coverage across queries
-- **Per-query cap**: Max 8 articles per query to prevent dominance
-- **Outputs**: 
-  - `queried_news.json` - 20 most relevant articles with full_text
-  - Matched queries, hybrid scores, best chunk snippets
-- **Technology**: sentence-transformers + FAISS + BM25
-- **Performance**: ~30 seconds for 468 articles (no API costs!)
-- **Benefits**: Editorial control, faster, free, consistent daily
+- Replaces clustering with semantic search using 8 fixed queries and hybrid scoring (FAISS + BM25). Ensures diversity via MMR algorithm and per-query caps.
+- Outputs: `queried_news.json` with 30 articles, Performance: ~30 sec, No API costs
+- 📖 **[Full documentation →](orchestrator/rag/README.md)**
 
 ### 🔄 Current Phase:
 
