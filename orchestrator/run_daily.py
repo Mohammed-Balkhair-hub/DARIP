@@ -1,7 +1,7 @@
 from agents.collector import collect_all
-from agents.dedup_cluster import dedup_and_cluster
 from agents.fulltext_enricher import enrich_fulltext
 from agents.rag_retriever import retrieve_with_rag
+from agents.script_writer import script_writer
 
 
 def main():
@@ -11,11 +11,11 @@ def main():
     # Step 2: Full-Text Enrichment (fetch full text for all raw items)
     enrich_fulltext()
     
-    # Step 3: RAG Query Retrieval (NEW - replaces clustering)
+    # Step 3: RAG Query Retrieval (selects top 30 articles)
     retrieve_with_rag()
     
-    # Step 3 (OLD): Deduplication & Clustering - COMMENTED OUT
-    # dedup_and_cluster()
+    # Step 4: Generate Podcast Script
+    script_writer()
     
     print(f"[run_daily] ===== PIPELINE COMPLETE =====")
 

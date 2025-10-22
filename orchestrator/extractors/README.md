@@ -9,7 +9,7 @@ Utilities for fetching and extracting full article text from URLs. Used by the F
 The Full-Text Enricher agent uses these extractors in a **10-node workflow**:
 
 ```
-START: raw_items.json (468 articles)
+START: raw_items.json (Collected daily articles)
   ↓
 N0: LoadInput → Initialize extractors, build worklist
   ↓
@@ -37,6 +37,18 @@ N9: Done → Return stats
   ↓
 END: enriched raw_items.json (~40-65% success)
 ```
+
+### Performance & Scalability
+
+**Recursion Limit:** 70,000
+- Supports up to ~10,000 articles (70,000 ÷ 7 traversals per article)
+- Current workload: 1,300-1,500 articles
+- Memory usage: ~200-250 MB peak (safe for 1 GB RAM)
+
+**Skip Logic Optimization:**
+- Already-enriched items advance cursor in N1 and loop directly
+- Failed items advance cursor in N7 and loop back
+- Uses `skip_advance` flag to prevent double cursor increment
 
 ### Routing Logic
 
@@ -178,19 +190,31 @@ ENRICHER_LANG_ALLOWLIST = ['en']       # Only English articles
 | `lang_mismatch` | Non-English content | ~1-3% |
 | `too_short` | Partial extraction | ~2-5% |
 
-**Success rate:** ~40-65% (200-300 out of 468 articles)
+**Success rate:** ~40-65% (520-975 out of 1300-1500 articles)
 
 ---
 
 ## Performance
 
-**Processing time:** ~15-20 minutes for 468 articles  
+**Processing time:** ~35-50 minutes for 1300-1500 articles  
 **Bottleneck:** Per-domain rate limiting (intentional for politeness)  
-**Speed per article:** ~2-6 seconds (dominated by network + 2s QPS delay)
+**Speed per article:** ~2-6 seconds (dominated by network + 2s QPS delay)  
+**Memory usage:** ~200-250 MB peak
+
+**Capacity:**
+- Current recursion limit: 70,000
+- Maximum articles: ~10,000
+- Current workload: 1,300-1,500 articles
+- Headroom: 7x capacity
 
 **To speed up (less polite):**
 ```bash
-export ENRICHER_PER_DOMAIN_QPS=2.0  # Faster: ~4-6 minutes
+export ENRICHER_PER_DOMAIN_QPS=2.0  # Faster: ~12-18 minutes
 ```
 
-⚠️ Higher QPS may trigger blocks from some sites.
+**To handle more articles:**
+```bash
+export recursion_limit=100000  # In code, supports ~14,000 articles
+```
+
+Note: Higher QPS may trigger blocks from some sites.

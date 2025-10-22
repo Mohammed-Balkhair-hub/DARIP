@@ -25,23 +25,24 @@ The system operates as a **multi-agent pipeline** where each agent specializes i
 1. **Collector** - Fetches and normalizes news from RSS feeds
 2. **Full-Text Enricher** - Fetches complete article text for all collected items
 3. **RAG Retriever** - Semantic search with fixed queries to find most relevant articles
-4. **Bulletizer** - Converts articles into structured bullet points using RAG
-5. **Segment Composer** - Merges bullets into cohesive story segments
-6. **Scriptwriter** - Creates natural dialogue between two hosts
-7. **Polisher** - Fact-checks and refines the script
-8. **TTS Renderer** - Generates voice audio for both hosts
-9. **Assembler** - Mixes audio with proper timing and loudness
-10. **Captions** - Creates WebVTT captions synchronized with audio
-11. **Publisher** - Packages everything into final episode format
+4. **Script Writer** - Four-node workflow to generate podcast scripts:
+   - Headliner: Extracts verifiable facts into headlines
+   - Sequencer: Orders articles for optimal flow
+   - DuoScript: Generates TTS-ready dialogue lines
+   - Naturalizer: Polishes for natural conversation
+5. **TTS Renderer** (In Progress) - Generates voice audio for both hosts
+6. **Assembler** (Planned) - Mixes audio with proper timing and loudness
+7. **Captions** (Planned) - Creates WebVTT captions synchronized with audio
+8. **Publisher** (Planned) - Packages everything into final episode format
 
 ## 🎭 Host Personalities
 
-- **Host A** (Male, UK voice): Analytical, focuses on technical details and facts
-- **Host B** (Female, UK voice): Contextual, explores implications and broader impact
+- **Adam** (Male, UK voice): Analytical, focuses on technical details and facts
+- **Sara** (Female, UK voice): Contextual, explores implications and broader impact
 
 ## 🚀 Development Status
 
-**Current Phase**: Step 4 - Summarization & Bulletization
+**Current Phase**: Step 5 - TTS & Audio Assembly
 
 ### ✅ Completed Phases:
 
@@ -53,26 +54,36 @@ The system operates as a **multi-agent pipeline** where each agent specializes i
 **Step 2: Collection & Normalization (DONE)**
 - Collector Agent implemented and tested
 - Fetches recent articles from 20+ RSS feeds
-- Outputs: `data/outputs/YYYY-MM-DD/raw_items.json` with count metadata (~400-500 items)
+- Outputs: `data/outputs/YYYY-MM-DD/raw_items.json` with count metadata (~1300-1500 items)
 - Caches: `data/cache/YYYY-MM-DD/*.json` for article bodies
 
-**Step 2.5: Full-Text Enrichment (DONE)** 🚀
+**Step 2.5: Full-Text Enrichment (DONE)**
 - LangGraph workflow that fetches complete article text for all raw items using robots.txt compliance, rate limiting, and 4-library extraction fallback (trafilatura → readability → newspaper3k → goose3)
-- Success rate: ~40-65%, Performance: ~15-20 min for 400-500 items
+- Success rate: ~40-65%, Performance: ~15-20 min for 1300-1500 items
+- Supports up to 10,000 articles with recursion limit of 70,000
 - 📖 **[Full documentation →](orchestrator/extractors/README.md)**
 
-**Step 3: RAG Query Retrieval (DONE)** 🔍
-- Replaces clustering with semantic search using 8 fixed queries and hybrid scoring (FAISS + BM25). Ensures diversity via MMR algorithm and per-query caps.
+**Step 3: RAG Query Retrieval (DONE)**
+- Replaces clustering with semantic search using 19 fixed queries and hybrid scoring (FAISS + BM25). Ensures diversity via MMR algorithm and per-query caps.
 - Outputs: `queried_news.json` with 30 articles, Performance: ~30 sec, No API costs
 - 📖 **[Full documentation →](orchestrator/rag/README.md)**
 
+**Step 4: Podcast Script Generation (DONE)**
+- Four-node LangGraph workflow for generating TTS-ready podcast scripts
+- Node 1 (Headliner): Condenses articles into verifiable facts
+- Node 2 (Sequencer): Reorders for narrative flow
+- Node 3 (DuoScript): Generates line-by-line dialogue with refs
+- Node 4 (Naturalizer): Polishes for natural conversation
+- Outputs: JSONL scripts with timing, speakers, and fact references
+- 📖 **[Full documentation →](orchestrator/script_writer_agent/README.md)**
+
 ### 🔄 Current Phase:
 
-**Step 4: Summarization & Bulletization**
-- Convert article clusters into structured bullet points
-- Use RAG (Retrieval-Augmented Generation) for accuracy
-- Generate concise summaries per cluster
-- Prepare content for dialogue scriptwriting
+**Step 5: TTS & Audio Assembly**
+- Integrate text-to-speech for both hosts
+- Mix audio with proper timing and pauses
+- Generate synchronized captions
+- Package final podcast episode
 
 ## 📁 Project Structure
 
@@ -82,8 +93,17 @@ darip/
 │   ├── feeds/              # RSS source configurations
 │   ├── cache/              # Temporary processing artifacts  
 │   └── outputs/            # Generated episodes by date
+│       └── YYYY-MM-DD/
+│           ├── raw_items.json          # Collected articles
+│           ├── queried_news.json       # RAG-selected articles
+│           └── podcast_script/         # Script generation outputs
+│               ├── headliners.json
+│               ├── sequenced.json
+│               ├── script_lines.jsonl
+│               └── script_lines_polished.jsonl
 ├── orchestrator/           # Core AI pipeline (Python)
-│   ├── agents/            # Pipeline agents (collector, enricher, retriever, etc.)
+│   ├── agents/            # Pipeline agents (collector, enricher, retriever, script_writer)
+│   ├── script_writer_agent/  # Script generation nodes (headliner, sequencer, duo_script, naturalizer)
 │   ├── extractors/        # Text extraction utilities (robots, HTML, text)
 │   ├── rag/               # RAG utilities (chunker, embedder, indexer, scorer, MMR)
 │   └── config/            # Environment settings and query configurations

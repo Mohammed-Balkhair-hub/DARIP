@@ -33,6 +33,7 @@ class EnricherState(TypedDict):
     cursor: Dict[str, int]  # {next: int, total: int}
     stats: Dict[str, Any]  # Stats and failure tracking
     config: Dict[str, Any]  # Enricher config
+    successful_item_indices: List[int]  # Track indices of successfully enriched items
     
     # Shared resources (not serialized to JSON)
     robots_checker: Optional[RobotsChecker]
@@ -43,6 +44,7 @@ class EnricherState(TypedDict):
     current_item: Optional[Dict[str, Any]]
     current_cluster_id: Optional[int]
     current_item_index: Optional[int]
+    skip_advance: bool  # Flag to prevent double cursor increment
     
     # Fetch results for current item
     html_bytes: Optional[bytes]
@@ -131,9 +133,11 @@ def node_0_load_input(state: EnricherState) -> EnricherState:
     state['worklist'] = worklist
     state['cursor'] = {'next': 0, 'total': len(worklist)}
     state['stats'] = stats
+    state['successful_item_indices'] = []  # Track successfully enriched items
     state['robots_checker'] = robots_checker
     state['html_fetcher'] = html_fetcher
     state['text_extractor'] = text_extractor
+    state['skip_advance'] = False  # Initialize cursor advance flag
     
     return state
 
@@ -160,8 +164,11 @@ def node_1_pick_next(state: EnricherState) -> EnricherState:
     if current['has_fulltext'] and not state['config']['force']:
         logger.debug(f"[enricher N1] Skipping already enriched: {current['url']}")
         state['stats']['skipped'] += 1
+        # Keep already enriched items in the successful list
+        state['successful_item_indices'].append(current['item_index'])
         state['cursor']['next'] += 1
         state['current_item'] = None  # Signal to loop back
+        state['skip_advance'] = True  # Mark that cursor was already advanced
         return state
     
     # Process this item
@@ -173,6 +180,7 @@ def node_1_pick_next(state: EnricherState) -> EnricherState:
     state['current_cluster_id'] = None  # Not used for raw_items
     state['current_item_index'] = current['item_index']
     state['stats']['attempted'] += 1
+    state['skip_advance'] = False  # Will need to advance cursor later
     
     return state
 
@@ -367,16 +375,17 @@ def node_7_advance_cursor(state: EnricherState) -> EnricherState:
     N7: AdvanceCursor
     
     Write item fields to in-memory raw_items JSON and advance cursor.
+    Only successful items are tracked; failed items will be dropped.
     """
     current = state['current_item']
     
-    if current is not None:
-        # Write fields to raw_items JSON (articles array)
+    if current is not None and current.get('has_fulltext', False):
+        # Item succeeded - write fields to raw_items JSON (articles array)
         item_index = current['item_index']
         item = state['clusters']['articles'][item_index]
         
         # Update item with new fields
-        item['has_fulltext'] = current.get('has_fulltext', False)
+        item['has_fulltext'] = True
         item['full_text'] = current.get('full_text', '')
         
         # Optional metadata
@@ -384,15 +393,21 @@ def node_7_advance_cursor(state: EnricherState) -> EnricherState:
             item['extraction_method'] = current['extraction_method']
         if 'full_text_words' in current:
             item['full_text_words'] = current['full_text_words']
-        if 'failure_reason' in current:
-            item['failure_reason'] = current['failure_reason']
+        
+        # Track this successful item
+        state['successful_item_indices'].append(item_index)
     
-    # Advance cursor
-    state['cursor']['next'] += 1
+    # If item failed, we don't update it in the JSON
+    # It will be filtered out in node_8_write_output
+    
+    # Advance cursor only if not already advanced
+    if not state.get('skip_advance', False):
+        state['cursor']['next'] += 1
     
     # Clear current item for next iteration
     state['current_item'] = None
     state['html_bytes'] = None
+    state['skip_advance'] = False  # Reset flag
     
     return state
 
@@ -402,6 +417,7 @@ def node_8_write_output(state: EnricherState) -> EnricherState:
     N8: WriteOutput
     
     Atomically write enriched raw_items.json.
+    Only includes successfully enriched articles (drops failed ones).
     """
     logger.info("[enricher N8] Writing enriched raw_items.json")
     
@@ -409,12 +425,33 @@ def node_8_write_output(state: EnricherState) -> EnricherState:
     stats = state['stats']
     stats['failed'] = stats['attempted'] - stats['succeeded']
     
+    # Filter articles to only include successful ones
+    successful_indices = set(state['successful_item_indices'])
+    original_articles = state['clusters']['articles']
+    filtered_articles = [
+        article for idx, article in enumerate(original_articles)
+        if idx in successful_indices
+    ]
+    
+    original_count = len(original_articles)
+    filtered_count = len(filtered_articles)
+    dropped_count = original_count - filtered_count
+    
+    logger.info(
+        f"[enricher N8] Filtered articles: {filtered_count} kept, {dropped_count} dropped "
+        f"(original: {original_count})"
+    )
+    
+    # Update articles array with filtered list
+    state['clusters']['articles'] = filtered_articles
+    
     # Add enrichment_stats to raw_items JSON
     state['clusters']['enrichment_stats'] = {
         'attempted': stats['attempted'],
         'succeeded': stats['succeeded'],
         'failed': stats['failed'],
         'skipped': stats['skipped'],
+        'dropped': dropped_count,
         'failed_by_reason': stats['failed_by_reason'],
         'updated_at': datetime.utcnow().isoformat() + 'Z'
     }
@@ -434,7 +471,7 @@ def node_8_write_output(state: EnricherState) -> EnricherState:
     logger.info(f"[enricher N8] Wrote enriched raw_items to {final_path}")
     logger.info(
         f"[enricher N8] Stats: {stats['succeeded']}/{stats['attempted']} succeeded, "
-        f"{stats['failed']} failed, {stats['skipped']} skipped"
+        f"{stats['failed']} failed, {stats['skipped']} skipped, {dropped_count} dropped"
     )
     
     return state
@@ -472,7 +509,8 @@ def route_from_pick_next(state: EnricherState) -> str:
         if state['cursor']['next'] >= state['cursor']['total']:
             return 'write_output'
         else:
-            return 'pick_next'  # Loop for skipped items
+            # Loop back to pick_next (cursor was already advanced in skip case)
+            return 'pick_next'
     else:
         return 'robots_check'
 
@@ -592,6 +630,7 @@ def enrich_fulltext(date: Optional[str] = None, force: bool = False) -> Dict[str
         cursor={'next': 0, 'total': 0},
         stats={},
         config=config,
+        successful_item_indices=[],
         robots_checker=None,
         html_fetcher=None,
         text_extractor=None,
@@ -609,8 +648,8 @@ def enrich_fulltext(date: Optional[str] = None, force: bool = False) -> Dict[str
     
     # Set higher recursion limit for large worklists
     # Each item requires ~7 node traversals, so for 500 items we need ~3500 limit
-    # Setting to 5000 to handle up to ~700 items safely
-    config = {"recursion_limit": 5000}
+    # Setting to 70000 to handle up to ~10000 items safely
+    config = {"recursion_limit": 70000}
     
     final_state = app.invoke(initial_state, config=config)
     
