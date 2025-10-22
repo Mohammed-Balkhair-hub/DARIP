@@ -1,63 +1,71 @@
 darip/
-├─ README.md                         # How to run locally & deploy (Cloud Run notes)
-├─ .env.example                      # Environment variables template
-├─ .gitignore
-├─ data/                             # Inputs/outputs the pipeline produces (ignored in git)
+├─ README.md                         # Project overview and documentation
+├─ .gitignore                        # Git ignore patterns
+├─ docker-compose.yml                # Docker compose for local development
+├─ summary.txt                       # Original project plan and roadmap
+├─ project-structure.txt             # This file - project structure overview
+│
+├─ data/                             # Pipeline inputs/outputs (gitignored)
 │  ├─ feeds/
-│  │  └─ sources.yaml                # RSS/source list (topics, weights, language)
-│  ├─ cache/                         # Temp fetch/dedup artifacts
-│  └─ outputs/
-│     └─ 2025-10-17/                 # One folder per run/day
-│        ├─ darip_episode.mp3        # Final mixed audio (duo)
-│        ├─ darip_captions.vtt       # WebVTT captions
-│        ├─ darip_script.json        # Final scripted dialogue
-│        └─ darip_items.json         # Chosen items & metadata
+│  │  ├─ allowlist_feeds.json        # RSS feed sources with topic tags
+│  │  ├─ all_resources.json          # Extended resource list
+│  │  └─ background_briefs.json      # Optional: context for RAG
+│  ├─ cache/                         # Temporary fetch artifacts
+│  │  └─ YYYY-MM-DD/                 # Daily cache
+│  └─ outputs/                       # Generated outputs by date
+│     └─ YYYY-MM-DD/                 # One folder per run
+│        ├─ raw_items.json           # Step 1: Collected articles (~1300-1500)
+│        ├─ queried_news.json        # Step 3: RAG-selected articles (30)
+│        ├─ podcast_script/          # Step 4: Script generation outputs
+│        │  ├─ headliners.json       # Node 1: Condensed headlines
+│        │  ├─ sequenced.json        # Node 2: Reordered articles
+│        │  ├─ script_lines.jsonl    # Node 3: TTS-ready dialogue
+│        │  └─ script_lines_polished.jsonl  # Node 4: Polished script
+│        └─ _logs/                   # Processing logs and metrics
 │
-├─ scripts/                          # Helper scripts for dev/CI/CD
-│  ├─ dev_run_local.sh               # Run orchestrator in Docker locally
-│  ├─ build_and_push.sh              # Build & push image to Artifact Registry
-│  └─ healthcheck.sh                 # Simple /healthz for container
+├─ scripts/                          # Development scripts
+│  └─ entrypoint.sh                  # Container entrypoint
 │
-├─ orchestrator/                     # Core pipeline (Python)
-│  ├─ __init__.py
-│  ├─ run_daily.py                   # Entry point: runs the whole pipeline end-to-end
-│  ├─ requirements.txt               # Python deps for orchestrator
-│  ├─ Dockerfile                     # Container for the pipeline job/Cloud Run job
+├─ orchestrator/                     # Core AI pipeline (Python)
+│  ├─ run_daily.py                   # Entry point: runs pipeline end-to-end
+│  ├─ server.py                      # Dev server: POST /run triggers pipeline
+│  ├─ requirements.txt               # Python dependencies
+│  ├─ Dockerfile                     # Container image definition
+│  │
 │  ├─ config/
-│  │  ├─ settings.py                 # Reads env vars (paths, API keys, toggles)
-│  │  └─ logging.yaml                # Structured logging config
-│  ├─ rag/
-│  │  ├─ __init__.py
-│  │  ├─ embeddings.py               # Build/use text embeddings
-│  │  └─ faiss_utils.py              # FAISS index build/query helpers
-│  └─ agents/                        # Pipeline stages (numbered in run order)
-│     ├─ 00_collector.py             # Fetch items via RSS/API; normalize fields
-│     ├─ 01_dedup_cluster.py         # Near-dup & cluster by similarity
-│     ├─ 02_bulletizer.py            # Turn articles → crisp bullet points
-│     ├─ 03_segment_composer.py      # Group bullets into segments (story arcs)
-│     ├─ 04_scriptwriter.py          # Convert segments → two-speaker script
-│     ├─ 05_polisher_verifier.py     # Style, facts sanity-check, timing marks
-│     ├─ 06_tts_renderer.py          # Generate two voices, per-line audio
-│     ├─ 07_assembler.py             # Stitch WAVs/MP3, mix intro/outro, music ducking
-│     ├─ 08_captions.py              # Align text → VTT/SRT captions
-│     └─ 09_publisher.py             # Write outputs, update site JSON/today payload
+│  │  ├─ settings.py                 # All configuration (env vars, paths, settings)
+│  │  └─ queries.json                # RAG query definitions (19 queries)
+│  │
+│  ├─ agents/                        # Pipeline agents (orchestrators)
+│  │  ├─ collector.py                # Step 1: RSS collection
+│  │  ├─ fulltext_enricher.py        # Step 2: Full-text extraction (LangGraph)
+│  │  ├─ rag_retriever.py            # Step 3: RAG-based article selection
+│  │  └─ script_writer.py            # Step 4: Script generation (LangGraph orchestrator)
+│  │
+│  ├─ script_writer_agent/           # Script generation nodes
+│  │  ├─ README.md                   # Complete documentation
+│  │  ├─ headliner.py                # Node 1: Extract headlines
+│  │  ├─ sequencer.py                # Node 2: Reorder for flow
+│  │  ├─ duo_script.py               # Node 3: Generate dialogue lines
+│  │  └─ naturalizer.py              # Node 4: Polish for naturalness
+│  │
+│  ├─ extractors/                    # Full-text extraction utilities
+│  │  ├─ README.md                   # Extraction documentation
+│  │  ├─ robots_checker.py           # robots.txt compliance
+│  │  ├─ html_fetcher.py             # HTTP fetch with rate limiting
+│  │  └─ text_extractor.py           # Multi-library text extraction
+│  │
+│  └─ rag/                           # RAG retrieval utilities
+│     ├─ README.md                   # RAG documentation
+│     ├─ chunker.py                  # Text chunking
+│     ├─ embedder.py                 # Embedding generation
+│     ├─ indexer.py                  # FAISS indexing
+│     ├─ scorer.py                   # Hybrid scoring (BM25 + semantic)
+│     └─ mmr.py                      # MMR diversity selection
 │
-└─ site/                             # Static website
-   ├─ Dockerfile                     # (Optional) Nginx to serve /public
-   ├─ public/
-   │  ├─ index.html                  # Landing page for DARIP
-   │  ├─ today.html                  # Today’s episode page (reads JSON from /assets/json)
-   │  ├─ archive.html                # Past episodes list
-   │  └─ assets/
-   │     ├─ css/
-   │     │  └─ main.css
-   │     ├─ js/
-   │     │  └─ app.js
-   │     ├─ audio/                   # Published mp3 files (copied from data/outputs/*)
-   │     ├─ images/
-   │     └─ json/
-   │        ├─ today.json            # Today’s metadata (title, duration, tracks)
-   │        └─ archive.json          # List of previous episodes
-   └─ tools/
-      ├─ build_rss.py                # Generate podcast RSS feed (from /public/assets/audio + json)
-      └─ generate_sitemap.py         # Optional: sitemap.xml for SEO
+└─ site/                             # Static website (future)
+   └─ public/
+      ├─ index.html                  # Landing page
+      ├─ today.html                  # Today's episode player
+      ├─ archive.html                # Past episodes
+      └─ assets/                     # CSS, JS, audio, images, JSON

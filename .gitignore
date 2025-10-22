@@ -127,5 +127,6 @@ site/public/assets/json/archive.json
 !*.example
 !.env.example
 
-# Project documentation
+# Project documentation 
 summary.txt
+project-structure.txt
