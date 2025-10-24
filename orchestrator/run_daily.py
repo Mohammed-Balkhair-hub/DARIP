@@ -6,13 +6,13 @@ from agents.script_writer import script_writer
 
 def main():
     # Step 1: Collection (fetch articles from RSS)
-    collect_all()
+    #collect_all()
     
     # Step 2: Full-Text Enrichment (fetch full text for all raw items)
-    enrich_fulltext()
+    #enrich_fulltext()
     
     # Step 3: RAG Query Retrieval (selects top 30 articles)
-    retrieve_with_rag()
+    #retrieve_with_rag()
     
     # Step 4: Generate Podcast Script
     script_writer()

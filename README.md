@@ -73,7 +73,11 @@ The system operates as a **multi-agent pipeline** where each agent specializes i
 - Node 1 (Headliner): Condenses articles into verifiable facts
 - Node 2 (Sequencer): Reorders for narrative flow
 - Node 3 (DuoScript): Generates line-by-line dialogue with refs
-- Node 4 (Naturalizer): Polishes for natural conversation
+- Node 4 (Naturalizer): Polishes for natural conversation + intro/outro
+- **NEW:** Intro segment (SEG_0) with energetic host introduction
+- **NEW:** Outro segment (SEG_END) encouraging daily engagement
+- **NEW:** TTS text normalization (DARIP → darip for proper pronunciation)
+- **NEW:** Skip logic for efficient re-runs and debugging
 - Outputs: JSONL scripts with timing, speakers, and fact references
 - 📖 **[Full documentation →](orchestrator/script_writer_agent/README.md)**
 

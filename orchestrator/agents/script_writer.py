@@ -36,6 +36,46 @@ class ScriptWriterState(TypedDict):
     polished_script_file: str
 
 
+def run_headliner_with_skip(state: Dict[str, Any]) -> Dict[str, Any]:
+    """Wrapper for headliner that skips if output exists."""
+    output_file = os.path.join(state["output_dir"], "headliners.json")
+    if os.path.exists(output_file):
+        print(f"[script_writer] Skipping headliner - output already exists: {output_file}")
+        state["headliners_file"] = output_file
+        return state
+    return run_headliner(state)
+
+
+def run_sequencer_with_skip(state: Dict[str, Any]) -> Dict[str, Any]:
+    """Wrapper for sequencer that skips if output exists."""
+    output_file = os.path.join(state["output_dir"], "sequenced.json")
+    if os.path.exists(output_file):
+        print(f"[script_writer] Skipping sequencer - output already exists: {output_file}")
+        state["sequenced_file"] = output_file
+        return state
+    return run_sequencer(state)
+
+
+def run_duo_script_with_skip(state: Dict[str, Any]) -> Dict[str, Any]:
+    """Wrapper for duo_script that skips if output exists."""
+    output_file = os.path.join(state["output_dir"], "script_lines.jsonl")
+    if os.path.exists(output_file):
+        print(f"[script_writer] Skipping duo_script - output already exists: {output_file}")
+        state["duo_script_file"] = output_file
+        return state
+    return run_duo_script(state)
+
+
+def run_naturalizer_with_skip(state: Dict[str, Any]) -> Dict[str, Any]:
+    """Wrapper for naturalizer that skips if output exists."""
+    output_file = os.path.join(state["output_dir"], "script_lines_polished.jsonl")
+    if os.path.exists(output_file):
+        print(f"[script_writer] Skipping naturalizer - output already exists: {output_file}")
+        state["polished_script_file"] = output_file
+        return state
+    return run_naturalizer(state)
+
+
 def script_writer():
     """
     Main entry point for podcast script generation workflow.
@@ -90,10 +130,10 @@ def script_writer():
     graph = StateGraph(ScriptWriterState)
     
     # Add nodes
-    graph.add_node("headliner", run_headliner)
-    graph.add_node("sequencer", run_sequencer)
-    graph.add_node("duo_script", run_duo_script)
-    graph.add_node("naturalizer", run_naturalizer)
+    graph.add_node("headliner", run_headliner_with_skip)
+    graph.add_node("sequencer", run_sequencer_with_skip)
+    graph.add_node("duo_script", run_duo_script_with_skip)
+    graph.add_node("naturalizer", run_naturalizer_with_skip)
     
     # Define workflow edges
     graph.set_entry_point("headliner")

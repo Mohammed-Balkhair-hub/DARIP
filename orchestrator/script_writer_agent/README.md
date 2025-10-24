@@ -131,6 +131,10 @@ queried_news.json
 - Checks speaker balance across episode
 - Optionally adds SSML tags
 - One API call per segment
+- **NEW:** Generates intro segment (SEG_0) with energetic host introduction
+- **NEW:** Generates outro segment (SEG_END) with daily podcast engagement
+- **NEW:** Normalizes DARIP text variations to lowercase "darip" for TTS
+- **NEW:** Sorts and reassigns sequential line_ids (1, 2, 3...)
 
 **Enhancements:**
 - More natural phrasing and rhythm
@@ -139,6 +143,9 @@ queried_news.json
 - Smooth micro-transitions between topics
 - Pronunciation notes for tricky terms
 - Balanced speaker distribution (±10%)
+- **NEW:** Energetic intro with host introductions and topic preview
+- **NEW:** Professional outro encouraging daily engagement
+- **NEW:** TTS-optimized text (DARIP → darip for proper pronunciation)
 
 **Allowed Operations:**
 - Rephrase for naturalness
@@ -343,11 +350,27 @@ result = run_headliner(state)
 - `langgraph` - Workflow orchestration
 - `tenacity` - Retry logic with exponential backoff
 
+## Recent Updates
+
+### ✅ Intro/Outro Generation (COMPLETED)
+- **Intro Segment (SEG_0):** Energetic host introduction with topic preview
+- **Outro Segment (SEG_END):** Professional closing encouraging daily engagement
+- **Daily Podcast Focus:** Outro emphasizes DARIP as a daily podcast
+
+### ✅ TTS Text Normalization (COMPLETED)
+- **DARIP Normalization:** Converts all variations (DARIP, Darip, etc.) to lowercase "darip"
+- **TTS Optimization:** Prevents TTS from spelling out "D-A-R-I-P" letter by letter
+- **Natural Pronunciation:** Ensures "darip" is pronounced as a word
+
+### ✅ Script Ordering & Skip Logic (COMPLETED)
+- **Sequential Line IDs:** All lines get proper sequential IDs (1, 2, 3...)
+- **Skip Logic:** Nodes can skip execution if output files already exist
+- **Efficient Re-runs:** Allows partial pipeline execution for debugging
+
 ## Future Enhancements
 
 - Voice ID mapping per speaker
 - Custom pronunciation dictionaries
-- Intro/outro generation
 - Music/sfx cue insertion
 - Multi-language support
 - Speaker emotion/emphasis hints

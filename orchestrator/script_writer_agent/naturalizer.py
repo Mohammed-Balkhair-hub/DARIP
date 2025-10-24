@@ -268,6 +268,177 @@ def _polish_segment_lines(
         return segment_lines
 
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+def _generate_intro_segment(items: List[Dict[str, Any]], constraints: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Generate an energetic introduction segment (SEG_0).
+    
+    Args:
+        items: List of news items to preview
+        constraints: Script constraints
+        
+    Returns:
+        List of intro line dictionaries
+    """
+    client = OpenAI(api_key=settings.OPENAI_API_KEY)
+    
+    # Extract titles for preview
+    titles = [item.get("title", "")[:80] for item in items[:5]]  # First 5 items
+    topics_preview = "\n".join(f"- {title}" for title in titles if title)
+    
+    system_prompt = (
+        "You are a podcast script writer creating an energetic introduction for a tech news podcast called DARIP. "
+        "Generate 4-6 dialogue lines between hosts Adam and Sara. "
+        "The intro should: (1) Have the hosts introduce themselves warmly, "
+        "(2) Introduce the podcast name 'DARIP' with energy and enthusiasm, "
+        "(3) Give a quick, exciting preview of today's topics. "
+        "Keep it conversational, upbeat, and engaging. "
+        "Output JSONL format with the same schema as the main script."
+    )
+    
+    user_prompt = (
+        f"**Hosts:** Adam and Sara\n"
+        f"**Podcast name:** DARIP\n"
+        f"**Today's topics preview:**\n{topics_preview}\n\n"
+        f"**Requirements:**\n"
+        f"- 4-6 lines total\n"
+        f"- Alternate between Adam and Sara\n"
+        f"- Max {constraints['max_words_per_line']} words per line\n"
+        f"- Energetic, welcoming tone\n"
+        f"- Mention 2-3 key topics from the list\n\n"
+        f"**Output format (JSONL):**\n"
+        f'{{"line_id":1,"segment_id":"SEG_0","speaker":"Adam","voice":null,"item_id":"intro","text":"...","refs":[],"pause_ms_after":180,"secs_estimate":3.5}}\n\n'
+        f"Start with Adam welcoming listeners."
+    )
+    
+    try:
+        response = client.chat.completions.create(
+            model=settings.OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.6,  # More creative for intro
+            max_tokens=2048
+        )
+        
+        response_text = response.choices[0].message.content.strip()
+        intro_lines = _parse_jsonl_response(response_text)
+        
+        # Ensure all lines have SEG_0 and item_id="intro"
+        for line in intro_lines:
+            line["segment_id"] = "SEG_0"
+            line["item_id"] = "intro"
+            if "refs" not in line:
+                line["refs"] = []
+            if "secs_estimate" not in line:
+                line["secs_estimate"] = len(line.get("text", "").split()) / settings.SCRIPT_WPM_ESTIMATE * 60
+        
+        print(f"[naturalizer] Generated {len(intro_lines)} intro lines for SEG_0")
+        return intro_lines
+        
+    except Exception as e:
+        print(f"[naturalizer] Error generating intro: {e}")
+        return []
+
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+def _generate_outro_segment(constraints: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Generate a closing outro segment (SEG_END).
+    
+    Args:
+        constraints: Script constraints
+        
+    Returns:
+        List of outro line dictionaries
+    """
+    client = OpenAI(api_key=settings.OPENAI_API_KEY)
+    
+    system_prompt = (
+        "You are a podcast script writer creating a closing outro for a tech news podcast called DARIP. "
+        "Generate 3-4 dialogue lines between hosts Adam and Sara. "
+        "The outro should: (1) Thank listeners for tuning in, "
+        "(2) Mention that DARIP is a DAILY podcast with new episodes every day, "
+        "(3) Encourage them to follow for daily updates, "
+        "(4) End with a memorable sign-off. "
+        "Keep it warm, professional, and engaging. "
+        "Output JSONL format with the same schema as the main script."
+    )
+    
+    user_prompt = (
+        f"**Hosts:** Adam and Sara\n"
+        f"**Podcast name:** DARIP\n"
+        f"**Important:** DARIP is a DAILY podcast that publishes new episodes every day on the website\n"
+        f"**Requirements:**\n"
+        f"- 3-4 lines total\n"
+        f"- Alternate between Adam and Sara\n"
+        f"- Max {constraints['max_words_per_line']} words per line\n"
+        f"- Warm, professional closing tone\n"
+        f"- Thank listeners and encourage daily engagement\n"
+        f"- Mention that new episodes come out daily\n\n"
+        f"**Output format (JSONL):**\n"
+        f'{{"line_id":1,"segment_id":"SEG_END","speaker":"Adam","voice":null,"item_id":"outro","text":"...","refs":[],"pause_ms_after":180,"secs_estimate":3.5}}\n\n'
+        f"Start with Adam thanking listeners."
+    )
+    
+    try:
+        response = client.chat.completions.create(
+            model=settings.OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.6,  # More creative for outro
+            max_tokens=2048
+        )
+        
+        response_text = response.choices[0].message.content.strip()
+        outro_lines = _parse_jsonl_response(response_text)
+        
+        # Ensure all lines have SEG_END and item_id="outro"
+        for line in outro_lines:
+            line["segment_id"] = "SEG_END"
+            line["item_id"] = "outro"
+            if "refs" not in line:
+                line["refs"] = []
+            if "secs_estimate" not in line:
+                line["secs_estimate"] = len(line.get("text", "").split()) / settings.SCRIPT_WPM_ESTIMATE * 60
+        
+        print(f"[naturalizer] Generated {len(outro_lines)} outro lines for SEG_END")
+        return outro_lines
+        
+    except Exception as e:
+        print(f"[naturalizer] Error generating outro: {e}")
+        return []
+
+
+def _normalize_text_for_tts(lines: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Normalize text in script lines for TTS pronunciation.
+    
+    Converts all variations of DARIP (DARIP, Darip, DaRiP, etc.) to lowercase "darip"
+    so TTS pronounces it as a word instead of spelling it out.
+    
+    Args:
+        lines: List of script line dictionaries
+        
+    Returns:
+        List of lines with normalized text
+    """
+    import re
+    
+    for line in lines:
+        if "text" in line and line["text"]:
+            # Replace all case variations of DARIP with lowercase "darip"
+            # Use word boundary to avoid replacing partial matches
+            line["text"] = re.sub(r'\bDARIP\b', 'darip', line["text"])
+            line["text"] = re.sub(r'\bDarip\b', 'darip', line["text"])
+            line["text"] = re.sub(r'\bDaRiP\b', 'darip', line["text"])  # Any other variations
+    
+    return lines
+
+
 def run_naturalizer(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     LangGraph node function: Polish script for natural dialogue flow.
@@ -336,6 +507,53 @@ def run_naturalizer(state: Dict[str, Any]) -> Dict[str, Any]:
         segment_lines = segments[segment_id]
         polished_lines = _polish_segment_lines(segment_lines, constraints)
         all_polished_lines.extend(polished_lines)
+    
+    # Generate introduction segment (SEG_0)
+    print("[naturalizer] Generating introduction segment (SEG_0)...")
+    intro_lines = _generate_intro_segment(state.get("items", []), constraints)
+    
+    # Generate outro segment (SEG_END)
+    print("[naturalizer] Generating outro segment (SEG_END)...")
+    outro_lines = _generate_outro_segment(constraints)
+    
+    # Separate intro lines from news content lines
+    if intro_lines:
+        print(f"[naturalizer] Added {len(intro_lines)} intro lines to beginning")
+        # Keep intro lines separate - they should stay at the beginning
+        for line in intro_lines:
+            line["line_id"] = 0  # Temporary ID for intro lines
+    
+    if outro_lines:
+        print(f"[naturalizer] Added {len(outro_lines)} outro lines to end")
+        # Keep outro lines separate - they should stay at the end
+        for line in outro_lines:
+            line["line_id"] = 999999  # High temporary ID for outro lines
+    
+    # Sort only the news content lines by line_id
+    print(f"[naturalizer] Sorting {len(all_polished_lines)} news content lines by line_id...")
+    all_polished_lines.sort(key=lambda x: x.get("line_id", 0))
+    
+    # Combine intro lines (at beginning) + sorted news lines + outro lines (at end)
+    final_lines = []
+    if intro_lines:
+        final_lines.extend(intro_lines)
+    final_lines.extend(all_polished_lines)
+    if outro_lines:
+        final_lines.extend(outro_lines)
+    
+    # Reassign sequential line_ids starting from 1
+    for idx, line in enumerate(final_lines, start=1):
+        line["line_id"] = idx
+    
+    print(f"[naturalizer] Reassigned line_ids from 1 to {len(final_lines)}")
+    
+    # Normalize text for TTS (convert DARIP variations to lowercase)
+    print("[naturalizer] Normalizing text for TTS pronunciation...")
+    final_lines = _normalize_text_for_tts(final_lines)
+    print("[naturalizer] Converted DARIP variations to 'darip' for proper TTS pronunciation")
+    
+    # Update all_polished_lines to use the final combined list
+    all_polished_lines = final_lines
     
     # Check speaker balance if enabled
     if constraints.get("enforce_speaker_balance", settings.POLISH_ENFORCE_BALANCE):
